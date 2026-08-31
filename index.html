@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexaKey DataStore • Live Account Vault</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glow-bg glow-1"></div>
+    <div class="glow-bg glow-2"></div>
+
+    <div class="app-container">
+        <!-- Top Navigation -->
+        <header class="header">
+            <div class="logo-area">
+                <div class="logo-icon">⚡</div>
+                <div>
+                    <h1 class="brand-title">NEXA<span class="gradient-text">KEY</span> <span class="badge-tag">DATASTORE</span></h1>
+                    <p class="brand-subtitle">Centralized Cloud Account Vault & Real-Time Sync</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="live-indicator">
+                    <span class="pulse-dot"></span>
+                    <span id="liveStatusText">Live Sync Active</span>
+                </div>
+                <button class="btn btn-secondary" id="openConfigBtn">⚙️ Settings / Database</button>
+                <a href="https://nexakey.site" target="_blank" class="btn btn-discord">🌐 nexakey.site</a>
+            </div>
+        </header>
+
+        <!-- Stats Overview Cards -->
+        <section class="stats-grid">
+            <div class="stat-card" data-status="ALL">
+                <div class="stat-icon">📊</div>
+                <div class="stat-info">
+                    <span class="stat-label">Total Generated</span>
+                    <span class="stat-value" id="statTotal">0</span>
+                </div>
+            </div>
+            <div class="stat-card stat-valid" data-status="VALID">
+                <div class="stat-icon">🟢</div>
+                <div class="stat-info">
+                    <span class="stat-label">Valid Accounts</span>
+                    <span class="stat-value text-green" id="statValid">0</span>
+                </div>
+            </div>
+            <div class="stat-card stat-locked" data-status="LOCKED">
+                <div class="stat-icon">🟡</div>
+                <div class="stat-info">
+                    <span class="stat-label">Locked Accounts</span>
+                    <span class="stat-value text-yellow" id="statLocked">0</span>
+                </div>
+            </div>
+            <div class="stat-card stat-invalid" data-status="INVALID">
+                <div class="stat-icon">🔴</div>
+                <div class="stat-info">
+                    <span class="stat-label">Invalid Accounts</span>
+                    <span class="stat-value text-red" id="statInvalid">0</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Controls & Filters Toolbar -->
+        <section class="toolbar">
+            <div class="filter-tabs">
+                <button class="tab-btn active" data-filter="ALL">All Accounts (<span id="countAll">0</span>)</button>
+                <button class="tab-btn" data-filter="VALID">Valid (<span id="countValid">0</span>)</button>
+                <button class="tab-btn" data-filter="LOCKED">Locked (<span id="countLocked">0</span>)</button>
+                <button class="tab-btn" data-filter="INVALID">Invalid (<span id="countInvalid">0</span>)</button>
+            </div>
+
+            <div class="search-and-actions">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="searchInput" placeholder="Search by operator, email, token, or date...">
+                </div>
+
+                <select id="operatorFilter" class="dropdown-filter">
+                    <option value="ALL">👤 All Operators</option>
+                </select>
+
+                <button class="btn btn-primary" id="copyAllValidBtn">📋 Copy All Valid</button>
+                <button class="btn btn-secondary" id="exportBtn">💾 Export TXT</button>
+            </div>
+        </section>
+
+        <!-- Accounts Feed -->
+        <main class="accounts-section">
+            <div class="accounts-list" id="accountsList">
+                <div class="empty-state" id="loadingState">
+                    <div class="spinner"></div>
+                    <p>Loading accounts from cloud store...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Settings / Database Config Modal -->
+    <div class="modal-overlay" id="configModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2>⚙️ Cloud Database Configuration</h2>
+                <button class="close-btn" id="closeConfigBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-desc">
+                    Connect your free <strong>Firebase Realtime Database</strong> or custom REST endpoint. 
+                    Accounts generated by friends will automatically appear live on this page!
+                </p>
+                <div class="form-group">
+                    <label for="dbUrlInput">Firebase Realtime DB URL / REST Endpoint:</label>
+                    <input type="text" id="dbUrlInput" placeholder="https://YOUR-PROJECT-NAME-default-rtdb.firebaseio.com">
+                    <small>Example: <code>https://nexakey-vault-default-rtdb.firebaseio.com</code></small>
+                </div>
+                <div class="form-group">
+                    <label for="dbPasscode">Dashboard Access Passcode (Optional):</label>
+                    <input type="password" id="dbPasscode" placeholder="Leave empty for public access">
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" id="loadSampleDataBtn">🧪 Load Demo Sample Data</button>
+                    <button class="btn btn-primary" id="saveConfigBtn">💾 Save & Connect</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">Copied to clipboard!</div>
+
+    <script src="app.js"></script>
+</body>
+</html>
