@@ -3,31 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NexaKey Vault • Cloud Account Store</title>
+    <title>NexaKey Vault • Cloud Account Store & Leaderboard</title>
+    <meta name="description" content="Next-Gen Realtime Discord Account Vault & Operator Analytics Dashboard">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Animated Cyber Canvas Background -->
+    <canvas id="bgCanvas" class="cyber-canvas"></canvas>
+    <div class="cyber-ambient-overlay"></div>
+
     <!-- ============================================================================
          LOCK SCREEN (Password Protected: nexakey123)
          ============================================================================ -->
     <div class="lock-overlay" id="lockOverlay">
         <div class="lock-card">
-            <div class="lock-logo">🔒</div>
-            <h2 class="lock-title">NEXA<span class="brand-dim">KEY</span> VAULT</h2>
-            <p class="lock-desc">Protected Cloud Storage &bull; Enter passcode to access</p>
+            <div class="lock-glow-orb"></div>
+            <div class="lock-shield-badge">
+                <span class="lock-icon">🔒</span>
+                <span class="shield-pulse"></span>
+            </div>
+            <h2 class="lock-title">NEXA<span class="gradient-text">KEY</span> <span class="badge-vault">VAULT</span></h2>
+            <p class="lock-desc">Protected Cloud DataStore • Enter security passcode</p>
             
             <form id="lockForm" class="lock-form" onsubmit="return false;">
                 <div class="lock-input-wrap">
-                    <input type="password" id="passInput" placeholder="Enter passcode..." autocomplete="current-password" autofocus>
+                    <span class="lock-key-icon">🔑</span>
+                    <input type="password" id="passInput" placeholder="Enter security passcode..." autocomplete="current-password" autofocus>
                     <button type="button" class="eye-toggle" id="eyeToggle" title="Toggle visibility">👁️</button>
                 </div>
-                <div class="lock-error" id="lockError">Incorrect passcode. Try again.</div>
-                <button type="submit" class="btn-unlock" id="unlockBtn">Unlock Vault ⚡</button>
+                <div class="lock-error" id="lockError">
+                    <span>⚠️ Incorrect passcode. Please try again.</span>
+                </div>
+                <button type="submit" class="btn-unlock" id="unlockBtn">
+                    <span>Unlock Cloud Vault</span>
+                    <span class="btn-arrow">⚡</span>
+                </button>
             </form>
-            <div class="lock-hint">🔒 Passcode is required to view account combos & tokens.</div>
+            <div class="lock-hint">
+                <span class="hint-bullet">🛡️</span> Passcode required to view live combos, tokens & operator telemetry.
+            </div>
         </div>
     </div>
 
@@ -38,77 +55,128 @@
         <!-- Top Navigation -->
         <header class="header">
             <div class="logo-area">
-                <div class="logo-icon">⚡</div>
-                <div>
-                    <h1 class="brand-title">NEXA<span class="brand-dim">KEY</span> <span class="badge-tag">VAULT</span></h1>
-                    <p class="brand-subtitle">Cloud Account Management • Real-Time Batch Tracker</p>
+                <div class="logo-hexagon">
+                    <span class="logo-bolt">⚡</span>
+                    <div class="logo-glow"></div>
+                </div>
+                <div class="logo-text-group">
+                    <h1 class="brand-title">
+                        NEXA<span class="gradient-text">KEY</span> 
+                        <span class="badge-pro">PRO VAULT</span>
+                    </h1>
+                    <p class="brand-subtitle">Real-Time Cloud Account Datastore • Multi-Operator Analytics</p>
                 </div>
             </div>
+
             <div class="header-actions">
-                <div class="live-indicator">
-                    <span class="pulse-dot"></span>
-                    <span id="liveStatusText">Live Sync Active</span>
+                <div class="live-indicator" id="liveIndicator">
+                    <span class="radar-dot"></span>
+                    <span class="radar-pulse"></span>
+                    <span id="liveStatusText" class="live-status-text">Live Sync Active</span>
                 </div>
-                <button class="btn btn-secondary" id="refreshBtn">🔄 Refresh</button>
-                <button class="btn btn-secondary" id="openConfigBtn">⚙️ Database</button>
-                <button class="btn btn-secondary" id="lockAppBtn">🔒 Lock</button>
-                <a href="https://nexakey.site" target="_blank" class="btn btn-discord">🌐 nexakey.site</a>
+                <button class="btn btn-glass" id="refreshBtn" title="Re-sync from cloud">
+                    <span class="btn-icon">🔄</span> Sync
+                </button>
+                <button class="btn btn-glass" id="openConfigBtn" title="Database Configuration">
+                    <span class="btn-icon">⚙️</span> Database
+                </button>
+                <button class="btn btn-danger-glass" id="openWipeModalBtn" title="Wipe all cloud data with password">
+                    <span class="btn-icon">🗑️</span> Wipe Data
+                </button>
+                <button class="btn btn-glass" id="lockAppBtn" title="Lock the vault">
+                    <span class="btn-icon">🔒</span> Lock
+                </button>
+                <a href="https://nexakey.site" target="_blank" class="btn btn-site-link">
+                    <span>nexakey.site</span>
+                    <span class="external-arrow">↗</span>
+                </a>
             </div>
         </header>
 
         <!-- Stats Overview Cards -->
         <section class="stats-grid">
-            <div class="stat-card" data-status="ALL">
-                <div class="stat-icon icon-total">📊</div>
-                <div class="stat-info">
+            <div class="stat-card stat-card-total" data-status="ALL">
+                <div class="stat-card-glow"></div>
+                <div class="stat-header">
                     <span class="stat-label">Total Generated</span>
+                    <div class="stat-icon-wrap icon-total">📊</div>
+                </div>
+                <div class="stat-body">
                     <span class="stat-value" id="statTotal">0</span>
-                    <span class="stat-subtext" id="statTotalSub">All recorded generations</span>
+                </div>
+                <div class="stat-footer">
+                    <span class="stat-trend" id="statTotalSub">All recorded generations</span>
                 </div>
             </div>
-            <div class="stat-card stat-valid" data-status="VALID">
-                <div class="stat-icon icon-valid">🟢</div>
-                <div class="stat-info">
+
+            <div class="stat-card stat-card-valid" data-status="VALID">
+                <div class="stat-card-glow"></div>
+                <div class="stat-header">
                     <span class="stat-label">Valid Accounts</span>
+                    <div class="stat-icon-wrap icon-valid">🟢</div>
+                </div>
+                <div class="stat-body">
                     <span class="stat-value text-green" id="statValid">0</span>
-                    <span class="stat-subtext text-green-sub" id="statValidRate">0% Valid Rate</span>
+                </div>
+                <div class="stat-footer">
+                    <span class="badge-rate text-green-badge" id="statValidRate">0% Valid Rate</span>
                 </div>
             </div>
-            <div class="stat-card stat-locked" data-status="LOCKED">
-                <div class="stat-icon icon-locked">🟡</div>
-                <div class="stat-info">
+
+            <div class="stat-card stat-card-locked" data-status="LOCKED">
+                <div class="stat-card-glow"></div>
+                <div class="stat-header">
                     <span class="stat-label">Locked Accounts</span>
+                    <div class="stat-icon-wrap icon-locked">🟡</div>
+                </div>
+                <div class="stat-body">
                     <span class="stat-value text-yellow" id="statLocked">0</span>
-                    <span class="stat-subtext" id="statLockedSub">Verify Required</span>
+                </div>
+                <div class="stat-footer">
+                    <span class="stat-trend text-yellow-sub" id="statLockedSub">Verify Required</span>
                 </div>
             </div>
-            <div class="stat-card stat-fresh" data-status="FRESH">
-                <div class="stat-icon icon-fresh">🟢</div>
-                <div class="stat-info">
+
+            <div class="stat-card stat-card-fresh" data-status="FRESH">
+                <div class="stat-card-glow"></div>
+                <div class="stat-header">
                     <span class="stat-label">Unpaid / Fresh</span>
-                    <span class="stat-value text-green" id="statFresh">0</span>
-                    <span class="stat-subtext text-green-sub">Ready to use / sell</span>
+                    <div class="stat-icon-wrap icon-fresh">💎</div>
+                </div>
+                <div class="stat-body">
+                    <span class="stat-value text-cyan" id="statFresh">0</span>
+                </div>
+                <div class="stat-footer">
+                    <span class="stat-trend text-cyan-sub">Ready to use / sell</span>
                 </div>
             </div>
-            <div class="stat-card stat-paid" data-status="PAID">
-                <div class="stat-icon icon-paid">🔴</div>
-                <div class="stat-info">
-                    <span class="stat-label">Paid / Used</span>
+
+            <div class="stat-card stat-card-paid" data-status="PAID">
+                <div class="stat-card-glow"></div>
+                <div class="stat-header">
+                    <span class="stat-label">Paid / Claimed</span>
+                    <div class="stat-icon-wrap icon-paid">🔴</div>
+                </div>
+                <div class="stat-body">
                     <span class="stat-value text-red" id="statPaid">0</span>
-                    <span class="stat-subtext text-red-sub">Already utilized</span>
+                </div>
+                <div class="stat-footer">
+                    <span class="stat-trend text-red-sub">Utilized / archived</span>
                 </div>
             </div>
         </section>
 
         <!-- Advanced Leaderboard & Info Row -->
         <section class="analytics-row">
-            <!-- 👑 Advanced Leaderboard Section -->
+            <!-- 👑 Leaderboard Panel -->
             <div class="panel leaderboard-panel">
                 <div class="panel-header">
-                    <div class="panel-title">
+                    <div class="panel-title-wrap">
                         <span class="panel-icon">👑</span>
-                        <h3>Top Genners Leaderboard</h3>
-                        <small class="muted-note">(Click user to inspect stats)</small>
+                        <div>
+                            <h3 class="panel-heading">Top Genners Leaderboard</h3>
+                            <span class="panel-subheading">Ranked by total validated accounts</span>
+                        </div>
                     </div>
                     <div class="lb-time-pills">
                         <button class="lb-pill active" data-lb-range="today">Today</button>
@@ -119,7 +187,7 @@
 
                 <!-- Top 3 Podium Highlights -->
                 <div class="podium-row" id="podiumRow">
-                    <!-- Populated by JS -->
+                    <!-- Populated dynamically by JS -->
                 </div>
 
                 <!-- Complete Leaderboard Table -->
@@ -127,47 +195,50 @@
                     <table class="leaderboard-table">
                         <thead>
                             <tr>
-                                <th style="width: 50px;">Rank</th>
+                                <th style="width: 70px;">Rank</th>
                                 <th>Operator</th>
-                                <th>Total Gened</th>
+                                <th>Total Generated</th>
                                 <th>Valid Rate</th>
                                 <th>Locked</th>
                                 <th>Status Ratio</th>
                             </tr>
                         </thead>
                         <tbody id="leaderboardTbody">
-                            <tr><td colspan="6" class="empty-mini">Loading operator rankings...</td></tr>
+                            <tr><td colspan="6" class="empty-mini">No operator records in this period yet.</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Batch Guide & Quick Legend -->
+            <!-- Batch Guide & Status Guide -->
             <div class="panel info-panel">
                 <div class="panel-header">
-                    <div class="panel-title">
+                    <div class="panel-title-wrap">
                         <span class="panel-icon">📦</span>
-                        <h3>Batch System Guide</h3>
+                        <div>
+                            <h3 class="panel-heading">Batch Architecture</h3>
+                            <span class="panel-subheading">Multi-Operator Batch Tracking</span>
+                        </div>
                     </div>
                     <span class="panel-badge" id="batchesTotalBadge">0 Batches</span>
                 </div>
                 <div class="info-content">
-                    <div class="guide-item">
-                        <span class="guide-box green-box-demo"></span>
-                        <div>
-                            <strong>🟢 GREEN BOX (Unpaid / Fresh)</strong>
-                            <p>Active accounts ready to use or sell. Use <strong>Copy Valid</strong> or <strong>Copy Locked</strong> anytime.</p>
+                    <div class="guide-item guide-green">
+                        <div class="guide-dot-glow green-glow"></div>
+                        <div class="guide-text">
+                            <strong>🟢 GREEN BOX (Fresh / Unsold)</strong>
+                            <p>Fresh stock ready for use. Click <strong>Copy Valid</strong> or <strong>Copy Locked</strong> to copy all combos instantly.</p>
                         </div>
                     </div>
-                    <div class="guide-item">
-                        <span class="guide-box red-box-demo"></span>
-                        <div>
-                            <strong>🔴 RED BOX (Paid / Used)</strong>
-                            <p>Accounts that have been claimed or sold. Click the toggle button on any box to update status.</p>
+                    <div class="guide-item guide-red">
+                        <div class="guide-dot-glow red-glow"></div>
+                        <div class="guide-text">
+                            <strong>🔴 RED BOX (Paid / Claimed)</strong>
+                            <p>Accounts marked as paid or claimed. Click the toggle switch on any batch card to change its status in real time.</p>
                         </div>
                     </div>
                     <div class="provider-tags-list" id="providerTagsList">
-                        <!-- Provider tags rendered by JS -->
+                        <!-- Provider badges populated by JS -->
                     </div>
                 </div>
             </div>
@@ -193,8 +264,8 @@
                     <span class="filter-label">🏷️ Status:</span>
                     <div class="filter-tabs" id="statusFilterGroup">
                         <button class="tab-btn active" data-filter="ALL">All Batches (<span id="countAll">0</span>)</button>
-                        <button class="tab-btn" data-filter="FRESH">🟢 Fresh Only (<span id="countFresh">0</span>)</button>
-                        <button class="tab-btn" data-filter="PAID">🔴 Paid Only (<span id="countPaidBatches">0</span>)</button>
+                        <button class="tab-btn" data-filter="FRESH">🟢 Fresh (<span id="countFresh">0</span>)</button>
+                        <button class="tab-btn" data-filter="PAID">🔴 Paid (<span id="countPaidBatches">0</span>)</button>
                     </div>
                 </div>
             </div>
@@ -202,18 +273,28 @@
             <div class="toolbar-right">
                 <div class="search-box">
                     <span class="search-icon">🔍</span>
-                    <input type="text" id="searchInput" placeholder="Search operator, email, token, batch ID...">
+                    <input type="text" id="searchInput" placeholder="Search email, token, operator, batch..." autocomplete="off">
+                    <button class="search-clear-btn" id="searchClearBtn" style="display: none;">&times;</button>
                 </div>
 
                 <select id="operatorFilter" class="dropdown-filter">
                     <option value="ALL">👤 All Operators</option>
                 </select>
 
-                <!-- Dedicated Copy All Buttons -->
-                <button class="btn btn-primary" id="copyAllValidBtn">📋 Copy All Valid</button>
-                <button class="btn btn-warning" id="copyAllLockedBtn">🟡 Copy All Locked</button>
-                <button class="btn btn-secondary" id="exportBtn">💾 Export TXT</button>
-                <button class="btn btn-secondary" id="exportCsvBtn">📊 Export CSV</button>
+                <div class="action-buttons-group">
+                    <button class="btn btn-action-valid" id="copyAllValidBtn">
+                        <span>📋 Copy All Valid</span>
+                    </button>
+                    <button class="btn btn-action-locked" id="copyAllLockedBtn">
+                        <span>🟡 Copy All Locked</span>
+                    </button>
+                    <button class="btn btn-glass" id="exportBtn" title="Download Text File">
+                        <span>💾 Export TXT</span>
+                    </button>
+                    <button class="btn btn-glass" id="exportCsvBtn" title="Download Spreadsheet CSV">
+                        <span>📊 Export CSV</span>
+                    </button>
+                </div>
             </div>
         </section>
 
@@ -221,8 +302,9 @@
         <main class="accounts-section">
             <div class="boxes-feed" id="boxesFeed">
                 <div class="empty-state" id="loadingState">
-                    <div class="spinner"></div>
-                    <p>Syncing accounts from cloud database...</p>
+                    <div class="cyber-spinner"></div>
+                    <p class="empty-title">Syncing Cloud Datastore...</p>
+                    <small class="empty-sub">Connecting to Firebase Realtime Vault</small>
                 </div>
             </div>
         </main>
@@ -246,7 +328,7 @@
             <div class="modal-body">
                 <!-- User Today Stats -->
                 <div class="user-stats-section">
-                    <h3 class="section-title">📅 Today's Performance</h3>
+                    <h3 class="section-title">📅 Today's Telemetry</h3>
                     <div class="user-stats-grid">
                         <div class="mini-stat">
                             <span class="mini-stat-label">Total Today</span>
@@ -269,7 +351,7 @@
 
                 <!-- User All-Time Stats -->
                 <div class="user-stats-section">
-                    <h3 class="section-title">🌐 All-Time Summary</h3>
+                    <h3 class="section-title">🌐 All-Time Telemetry</h3>
                     <div class="user-stats-grid">
                         <div class="mini-stat">
                             <span class="mini-stat-label">All-Time Total</span>
@@ -281,7 +363,7 @@
                         </div>
                         <div class="mini-stat">
                             <span class="mini-stat-label">Unpaid / Fresh</span>
-                            <span class="mini-stat-val text-green" id="uAllFresh">0</span>
+                            <span class="mini-stat-val text-cyan" id="uAllFresh">0</span>
                         </div>
                         <div class="mini-stat">
                             <span class="mini-stat-label">Paid / Used</span>
@@ -294,7 +376,7 @@
                 <div class="user-stats-section">
                     <h3 class="section-title">📦 Batches by this Operator</h3>
                     <div class="user-batches-list" id="modalUserBatches">
-                        <!-- Rendered by JS -->
+                        <!-- Rendered dynamically by JS -->
                     </div>
                 </div>
             </div>
@@ -313,23 +395,71 @@
             <div class="modal-body">
                 <p class="modal-desc">
                     Your dashboard is connected to your Firebase Realtime Database. 
-                    All accounts generated by any operator running the generator sync here automatically.
+                    All accounts generated by any operator running the generator automatically sync here in real time.
                 </p>
                 <div class="form-group">
                     <label for="dbUrlInput">Firebase Realtime DB URL:</label>
                     <input type="text" id="dbUrlInput" value="https://nexakey-gen-default-rtdb.firebaseio.com">
-                    <small>Default Endpoint: <code>https://nexakey-gen-default-rtdb.firebaseio.com</code></small>
+                    <small>Endpoint: <code>https://nexakey-gen-default-rtdb.firebaseio.com</code></small>
                 </div>
                 <div class="modal-actions">
-                    <button class="btn btn-secondary" id="clearCacheBtn">🗑️ Clear Local Cache</button>
+                    <button class="btn btn-glass" id="clearCacheBtn">🗑️ Clear Local Cache</button>
                     <button class="btn btn-primary" id="saveConfigBtn">💾 Save & Reconnect</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- ============================================================================
+         🗑️ SECURED WIPE CLOUD VAULT MODAL (Password Protected: nexakey123)
+         ============================================================================ -->
+    <div class="modal-overlay" id="wipeModal">
+        <div class="modal-card danger-modal-card">
+            <div class="modal-header danger-header">
+                <div class="danger-title-wrap">
+                    <span class="danger-shield-icon">🚨</span>
+                    <div>
+                        <h2>Wipe Cloud Vault Data</h2>
+                        <span class="danger-subtext">Permanent Database Reset</span>
+                    </div>
+                </div>
+                <button class="close-btn" id="closeWipeModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="danger-alert-box">
+                    <div class="danger-alert-icon">⚠️</div>
+                    <div class="danger-alert-msg">
+                        <strong>WARNING: Permanent Action</strong>
+                        <p>This will permanently erase all generated accounts, tokens, and batch tracking records from your cloud database. This action cannot be undone.</p>
+                    </div>
+                </div>
+
+                <form id="wipeForm" onsubmit="return false;">
+                    <div class="form-group">
+                        <label for="wipePassInput">Enter Admin Passcode (<code>nexakey123</code>) to confirm:</label>
+                        <div class="lock-input-wrap">
+                            <span class="lock-key-icon">🔒</span>
+                            <input type="password" id="wipePassInput" placeholder="Enter nexakey123..." autocomplete="off">
+                            <button type="button" class="eye-toggle" id="wipeEyeToggle" title="Toggle visibility">👁️</button>
+                        </div>
+                        <div class="wipe-error-text" id="wipeErrorText">Incorrect passcode! Data was not wiped.</div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-glass" id="cancelWipeBtn">Cancel</button>
+                        <button type="submit" class="btn btn-danger-solid" id="confirmWipeBtn">
+                            <span>🗑️ Confirm Permanent Wipe</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
-    <div class="toast" id="toast">Copied to clipboard!</div>
+    <div class="toast" id="toast">
+        <span class="toast-icon">⚡</span>
+        <span class="toast-msg" id="toastMsg">Copied to clipboard!</span>
+    </div>
 
     <script src="app.js"></script>
 </body>

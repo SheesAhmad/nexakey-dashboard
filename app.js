@@ -1,4 +1,7 @@
-// NexaKey Cloud Vault & Batch Engine
+// ============================================================================
+// NexaKey Pro Cloud Vault & Multi-Operator Telemetry Engine
+// ============================================================================
+
 const VAULT_PASSCODE = 'nexakey123';
 const FIREBASE_DB = 'https://nexakey-gen-default-rtdb.firebaseio.com';
 const STORAGE_KEY_AUTH = 'nexakey_vault_auth';
@@ -15,49 +18,20 @@ let currentOperator = 'ALL';
 let searchQuery = '';
 let autoRefreshTimer = null;
 
-// Lock Elements
-const lockOverlay = document.getElementById('lockOverlay');
-const passInput = document.getElementById('passInput');
-const lockError = document.getElementById('lockError');
-const unlockBtn = document.getElementById('unlockBtn');
-const lockForm = document.getElementById('lockForm');
-const eyeToggle = document.getElementById('eyeToggle');
-const mainApp = document.getElementById('mainApp');
-const lockAppBtn = document.getElementById('lockAppBtn');
+// ============================================================================
+// 1. INITIALIZATION & AUTHENTICATION
+// ============================================================================
 
-// DOM Elements
-const boxesFeed = document.getElementById('boxesFeed');
-const searchInput = document.getElementById('searchInput');
-const operatorFilter = document.getElementById('operatorFilter');
-const podiumRow = document.getElementById('podiumRow');
-const leaderboardTbody = document.getElementById('leaderboardTbody');
-const providerTagsList = document.getElementById('providerTagsList');
-
-// Modal Elements
-const userModal = document.getElementById('userModal');
-const closeUserModal = document.getElementById('closeUserModal');
-const configModal = document.getElementById('configModal');
-const openConfigBtn = document.getElementById('openConfigBtn');
-const closeConfigBtn = document.getElementById('closeConfigBtn');
-const saveConfigBtn = document.getElementById('saveConfigBtn');
-const clearCacheBtn = document.getElementById('clearCacheBtn');
-const dbUrlInput = document.getElementById('dbUrlInput');
-
-// Action Buttons
-const refreshBtn = document.getElementById('refreshBtn');
-const copyAllValidBtn = document.getElementById('copyAllValidBtn');
-const copyAllLockedBtn = document.getElementById('copyAllLockedBtn');
-const exportBtn = document.getElementById('exportBtn');
-const exportCsvBtn = document.getElementById('exportCsvBtn');
-const toast = document.getElementById('toast');
-const liveStatusText = document.getElementById('liveStatusText');
-
-// Initialization
 document.addEventListener('DOMContentLoaded', () => {
-    // Setup Lock Screen Handlers
-    setupAuthHandlers();
+    // Start Animated Cyber Particle Background Canvas
+    initCyberCanvas();
 
-    // Check if already authenticated
+    // Setup Event Handlers
+    setupAuthHandlers();
+    setupWipeModalHandlers();
+    setupDashboardListeners();
+
+    // Check Authentication State
     const isAuth = localStorage.getItem(STORAGE_KEY_AUTH) === 'true';
     if (isAuth) {
         unlockVault();
@@ -67,7 +41,12 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function setupAuthHandlers() {
-    // Eye toggle for password visibility
+    const passInput = document.getElementById('passInput');
+    const eyeToggle = document.getElementById('eyeToggle');
+    const lockForm = document.getElementById('lockForm');
+    const unlockBtn = document.getElementById('unlockBtn');
+    const lockAppBtn = document.getElementById('lockAppBtn');
+
     eyeToggle.addEventListener('click', () => {
         if (passInput.type === 'password') {
             passInput.type = 'text';
@@ -78,7 +57,6 @@ function setupAuthHandlers() {
         }
     });
 
-    // Form submission
     lockForm.addEventListener('submit', (e) => {
         e.preventDefault();
         attemptUnlock();
@@ -89,30 +67,37 @@ function setupAuthHandlers() {
         attemptUnlock();
     });
 
-    // Lock button in header
     lockAppBtn.addEventListener('click', () => {
         localStorage.removeItem(STORAGE_KEY_AUTH);
         if (autoRefreshTimer) clearInterval(autoRefreshTimer);
         showLockScreen();
-        showToast('Vault locked!');
+        showToast('Vault locked successfully!', '🔒');
     });
 }
 
 function showLockScreen() {
+    const lockOverlay = document.getElementById('lockOverlay');
+    const mainApp = document.getElementById('mainApp');
+    const passInput = document.getElementById('passInput');
+    const lockError = document.getElementById('lockError');
+
     lockOverlay.classList.remove('hidden');
     mainApp.style.display = 'none';
     passInput.value = '';
     lockError.classList.remove('show');
-    setTimeout(() => passInput.focus(), 100);
+    setTimeout(() => passInput.focus(), 150);
 }
 
 function attemptUnlock() {
+    const passInput = document.getElementById('passInput');
+    const lockError = document.getElementById('lockError');
     const entered = passInput.value.trim();
+
     if (entered === VAULT_PASSCODE) {
         localStorage.setItem(STORAGE_KEY_AUTH, 'true');
         lockError.classList.remove('show');
         unlockVault();
-        showToast('⚡ Welcome to NexaKey Vault!');
+        showToast('⚡ Welcome to NexaKey Vault Pro!', '⚡');
     } else {
         lockError.classList.add('show');
         passInput.select();
@@ -120,8 +105,12 @@ function attemptUnlock() {
 }
 
 function unlockVault() {
+    const lockOverlay = document.getElementById('lockOverlay');
+    const mainApp = document.getElementById('mainApp');
+    const dbUrlInput = document.getElementById('dbUrlInput');
+
     lockOverlay.classList.add('hidden');
-    mainApp.style.display = 'block';
+    mainApp.style.display = 'flex';
 
     const savedUrl = localStorage.getItem(STORAGE_KEY_DB) || FIREBASE_DB;
     dbUrlInput.value = savedUrl;
@@ -148,12 +137,23 @@ function unlockVault() {
     // Auto-refresh poll every 3.5 seconds
     if (autoRefreshTimer) clearInterval(autoRefreshTimer);
     autoRefreshTimer = setInterval(fetchAccounts, 3500);
-
-    setupDashboardListeners();
 }
 
+// ============================================================================
+// 2. DASHBOARD EVENT LISTENERS
+// ============================================================================
+
 function setupDashboardListeners() {
-    // Timeframe selector
+    const searchInput = document.getElementById('searchInput');
+    const searchClearBtn = document.getElementById('searchClearBtn');
+    const operatorFilter = document.getElementById('operatorFilter');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const copyAllValidBtn = document.getElementById('copyAllValidBtn');
+    const copyAllLockedBtn = document.getElementById('copyAllLockedBtn');
+    const exportBtn = document.getElementById('exportBtn');
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+
+    // Timeframe selector buttons
     document.querySelectorAll('#timeframeGroup .timeframe-btn').forEach(btn => {
         btn.onclick = () => {
             document.querySelectorAll('#timeframeGroup .timeframe-btn').forEach(b => b.classList.remove('active'));
@@ -192,12 +192,21 @@ function setupDashboardListeners() {
     // Search query
     searchInput.oninput = (e) => {
         searchQuery = e.target.value.toLowerCase().trim();
+        searchClearBtn.style.display = searchQuery ? 'block' : 'none';
         renderBoxes();
+    };
+
+    searchClearBtn.onclick = () => {
+        searchInput.value = '';
+        searchQuery = '';
+        searchClearBtn.style.display = 'none';
+        renderBoxes();
+        searchInput.focus();
     };
 
     // Refresh button
     refreshBtn.onclick = () => {
-        showToast('Refreshing cloud data...');
+        showToast('Refreshing cloud datastore...', '🔄');
         fetchAccounts();
     };
 
@@ -212,13 +221,13 @@ function setupDashboardListeners() {
         });
 
         if (validAccs.length === 0) {
-            showToast('No valid accounts in current view!');
+            showToast('No valid accounts in current view!', '⚠️');
             return;
         }
 
         const text = validAccs.map(a => `${a.email}:${a.password}:${a.token}`).join('\n');
         navigator.clipboard.writeText(text).then(() => {
-            showToast(`Copied ${validAccs.length} valid combo(s)!`);
+            showToast(`Copied ${validAccs.length} valid combo(s)!`, '📋');
         });
     };
 
@@ -233,13 +242,13 @@ function setupDashboardListeners() {
         });
 
         if (lockedAccs.length === 0) {
-            showToast('No locked accounts in current view!');
+            showToast('No locked accounts in current view!', '⚠️');
             return;
         }
 
         const text = lockedAccs.map(a => `${a.email}:${a.password}:${a.token}`).join('\n');
         navigator.clipboard.writeText(text).then(() => {
-            showToast(`Copied ${lockedAccs.length} locked combo(s)!`);
+            showToast(`Copied ${lockedAccs.length} locked combo(s)!`, '🟡');
         });
     };
 
@@ -250,15 +259,15 @@ function setupDashboardListeners() {
         boxes.forEach(b => accounts.push(...b.accounts));
 
         if (accounts.length === 0) {
-            showToast('No accounts to export!');
+            showToast('No accounts to export!', '⚠️');
             return;
         }
 
-        let content = `# NexaKey Vault Export (${new Date().toLocaleString()})\n`;
+        let content = `# NexaKey Vault Pro Export (${new Date().toLocaleString()})\n`;
         content += `# Timeframe: ${activeTimeframe} | Batches: ${boxes.length} | Accounts: ${accounts.length}\n\n`;
         boxes.forEach((b, idx) => {
             const status = batchStatusMap[b.id] === 'PAID' ? 'PAID' : 'UNPAID';
-            content += `=== BATCH #${boxes.length - idx} [${status}] • Operator: ${b.operator} • ${b.startTime} ===\n`;
+            content += `=== BATCH #${boxes.length - idx} [${status}] • Operator: ${b.operator} • ${b.startTime || 'Recent'} ===\n`;
             b.accounts.forEach(a => {
                 content += `[${a.status}] ${a.email}:${a.password}:${a.token} | Provider: ${a.provider || 'N/A'}\n`;
             });
@@ -266,7 +275,7 @@ function setupDashboardListeners() {
         });
 
         downloadFile(content, `nexakey_export_${activeTimeframe}_${Date.now()}.txt`, 'text/plain');
-        showToast('Exported to TXT!');
+        showToast('Exported to TXT!', '💾');
     };
 
     // Export CSV
@@ -276,7 +285,7 @@ function setupDashboardListeners() {
         boxes.forEach(b => accounts.push(...b.accounts));
 
         if (accounts.length === 0) {
-            showToast('No accounts to export!');
+            showToast('No accounts to export!', '⚠️');
             return;
         }
 
@@ -290,14 +299,24 @@ function setupDashboardListeners() {
         });
 
         downloadFile(csv, `nexakey_analytics_${activeTimeframe}_${Date.now()}.csv`, 'text/csv');
-        showToast('Exported to CSV!');
+        showToast('Exported to CSV!', '📊');
     };
 
-    // Modals
+    // Operator Modal Listeners
+    const userModal = document.getElementById('userModal');
+    const closeUserModal = document.getElementById('closeUserModal');
     closeUserModal.onclick = () => userModal.classList.remove('active');
     userModal.onclick = (e) => {
         if (e.target === userModal) userModal.classList.remove('active');
     };
+
+    // Database Config Modal Listeners
+    const configModal = document.getElementById('configModal');
+    const openConfigBtn = document.getElementById('openConfigBtn');
+    const closeConfigBtn = document.getElementById('closeConfigBtn');
+    const saveConfigBtn = document.getElementById('saveConfigBtn');
+    const clearCacheBtn = document.getElementById('clearCacheBtn');
+    const dbUrlInput = document.getElementById('dbUrlInput');
 
     openConfigBtn.onclick = () => configModal.classList.add('active');
     closeConfigBtn.onclick = () => configModal.classList.remove('active');
@@ -309,7 +328,7 @@ function setupDashboardListeners() {
         const url = dbUrlInput.value.trim().replace(/\/$/, '') || FIREBASE_DB;
         localStorage.setItem(STORAGE_KEY_DB, url);
         configModal.classList.remove('active');
-        showToast('Database URL saved!');
+        showToast('Database URL saved!', '💾');
         fetchAccounts();
     };
 
@@ -317,14 +336,95 @@ function setupDashboardListeners() {
         localStorage.removeItem(STORAGE_KEY_CACHE);
         allAccounts = [];
         configModal.classList.remove('active');
-        showToast('Cache cleared! Re-fetching...');
+        showToast('Local cache cleared! Re-fetching...', '🗑️');
         fetchAccounts();
     };
 }
 
-// Fetch live accounts and cloud batch statuses
+// ============================================================================
+// 3. 🗑️ SECURED CLOUD DATA WIPE MODAL (Password: nexakey123)
+// ============================================================================
+
+function setupWipeModalHandlers() {
+    const wipeModal = document.getElementById('wipeModal');
+    const openWipeModalBtn = document.getElementById('openWipeModalBtn');
+    const closeWipeModalBtn = document.getElementById('closeWipeModalBtn');
+    const cancelWipeBtn = document.getElementById('cancelWipeBtn');
+    const wipeForm = document.getElementById('wipeForm');
+    const wipePassInput = document.getElementById('wipePassInput');
+    const wipeEyeToggle = document.getElementById('wipeEyeToggle');
+    const wipeErrorText = document.getElementById('wipeErrorText');
+
+    openWipeModalBtn.onclick = () => {
+        wipeModal.classList.add('active');
+        wipePassInput.value = '';
+        wipeErrorText.classList.remove('show');
+        setTimeout(() => wipePassInput.focus(), 150);
+    };
+
+    closeWipeModalBtn.onclick = () => wipeModal.classList.remove('active');
+    cancelWipeBtn.onclick = () => wipeModal.classList.remove('active');
+    wipeModal.onclick = (e) => {
+        if (e.target === wipeModal) wipeModal.classList.remove('active');
+    };
+
+    wipeEyeToggle.onclick = () => {
+        if (wipePassInput.type === 'password') {
+            wipePassInput.type = 'text';
+            wipeEyeToggle.textContent = '🙈';
+        } else {
+            wipePassInput.type = 'password';
+            wipeEyeToggle.textContent = '👁️';
+        }
+    };
+
+    wipeForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const entered = wipePassInput.value.trim();
+
+        if (entered !== VAULT_PASSCODE) {
+            wipeErrorText.classList.add('show');
+            wipePassInput.select();
+            return;
+        }
+
+        wipeErrorText.classList.remove('show');
+        showToast('Purging Cloud Datastore...', '🚨');
+
+        const dbUrl = localStorage.getItem(STORAGE_KEY_DB) || FIREBASE_DB;
+        try {
+            // 1. Delete all accounts from Firebase Realtime DB
+            const accEndpoint = `${dbUrl.replace(/\/$/, '')}/accounts.json`;
+            await fetch(accEndpoint, { method: 'DELETE' });
+
+            // 2. Delete all batch statuses from Firebase Realtime DB
+            const statusEndpoint = `${dbUrl.replace(/\/$/, '')}/batch_status.json`;
+            await fetch(statusEndpoint, { method: 'DELETE' });
+
+            // 3. Clear local cache and statuses
+            allAccounts = [];
+            batchStatusMap = {};
+            localStorage.removeItem(STORAGE_KEY_CACHE);
+            localStorage.removeItem(STORAGE_KEY_BATCH);
+
+            // 4. Update UI
+            render();
+            wipeModal.classList.remove('active');
+            showToast('🗑️ Cloud Vault successfully wiped clean! (0 accounts)', '✨');
+        } catch (err) {
+            showToast(`Wipe failed: ${err.message}`, '⚠️');
+        }
+    };
+}
+
+// ============================================================================
+// 4. REAL-TIME DATA FETCH & SYNC
+// ============================================================================
+
 async function fetchAccounts() {
     const dbUrl = localStorage.getItem(STORAGE_KEY_DB) || FIREBASE_DB;
+    const liveStatusText = document.getElementById('liveStatusText');
+
     try {
         let endpoint = dbUrl.endsWith('.json') ? dbUrl : `${dbUrl}/accounts.json`;
         const res = await fetch(endpoint);
@@ -359,14 +459,22 @@ async function fetchAccounts() {
             }
         } catch (e) {}
 
-        liveStatusText.textContent = `Live Sync Active (${allAccounts.length} Total)`;
+        if (allAccounts.length > 0) {
+            liveStatusText.textContent = `Live Sync Active (${allAccounts.length} Total)`;
+        } else {
+            liveStatusText.textContent = 'Live Sync Active (Vault Ready)';
+        }
+
         render();
     } catch (e) {
         liveStatusText.textContent = 'Sync Offline';
     }
 }
 
-// Helper: Get or calculate batch ID for an account
+// ============================================================================
+// 5. TIMEFRAMES, FILTERS & BATCH LOGIC
+// ============================================================================
+
 function getBatchId(acc) {
     if (acc.session_id) return acc.session_id;
     const ts = new Date(acc.timestamp || 0).getTime();
@@ -375,7 +483,6 @@ function getBatchId(acc) {
     return `batch_${op}_${cluster}`;
 }
 
-// Filter accounts by active timeframe
 function getTimeframeAccounts(customRange) {
     const r = customRange || activeTimeframe;
     const now = new Date();
@@ -404,7 +511,6 @@ function getTimeframeAccounts(customRange) {
     });
 }
 
-// Group timeframe accounts into Batch Boxes
 function getAllBatchBoxes() {
     const tfAccounts = getTimeframeAccounts();
     const map = {};
@@ -427,7 +533,6 @@ function getAllBatchBoxes() {
     return Object.values(map).sort((a, b) => new Date(b.startTime || 0) - new Date(a.startTime || 0));
 }
 
-// Get batch boxes matching current filters and search
 function getFilteredBoxes() {
     const allBoxes = getAllBatchBoxes();
 
@@ -454,7 +559,10 @@ function getFilteredBoxes() {
     });
 }
 
-// Full Render
+// ============================================================================
+// 6. UI RENDERING PIPELINE
+// ============================================================================
+
 function render() {
     renderStats();
     renderLeaderboard();
@@ -462,11 +570,10 @@ function render() {
     renderBoxes();
 }
 
-// Render Stats Cards
 function renderStats() {
     const tfAccounts = getTimeframeAccounts();
     let total = tfAccounts.length;
-    let valid = 0, locked = 0, invalid = 0, fresh = 0, paid = 0;
+    let valid = 0, locked = 0, fresh = 0, paid = 0;
 
     tfAccounts.forEach(a => {
         const s = (a.status || '').toUpperCase();
@@ -479,8 +586,6 @@ function renderStats() {
             else paid++;
         } else if (s === 'LOCKED') {
             locked++;
-        } else if (s === 'INVALID') {
-            invalid++;
         }
     });
 
@@ -507,12 +612,15 @@ function renderStats() {
     document.getElementById('batchesTotalBadge').textContent = `${boxes.length} Batches in Period`;
 }
 
-// 👑 Render Advanced Leaderboard (Podium + Table)
+// 👑 Render Podium Highlights & Full Leaderboard Table
 function renderLeaderboard() {
+    const podiumRow = document.getElementById('podiumRow');
+    const leaderboardTbody = document.getElementById('leaderboardTbody');
+
     const tfAccounts = getTimeframeAccounts(leaderboardRange);
     if (tfAccounts.length === 0) {
         podiumRow.innerHTML = '';
-        leaderboardTbody.innerHTML = `<tr><td colspan="6" class="empty-mini">No operator activity recorded in this period.</td></tr>`;
+        leaderboardTbody.innerHTML = `<tr><td colspan="6" class="empty-mini">No operator records in this period yet. Generate accounts to view live rankings!</td></tr>`;
         return;
     }
 
@@ -520,19 +628,18 @@ function renderLeaderboard() {
     tfAccounts.forEach(acc => {
         const op = acc.operator || 'Operator1';
         if (!opMap[op]) {
-            opMap[op] = { name: op, total: 0, valid: 0, locked: 0, invalid: 0 };
+            opMap[op] = { name: op, total: 0, valid: 0, locked: 0 };
         }
         opMap[op].total++;
         const s = (acc.status || '').toUpperCase();
         if (s === 'VALID') opMap[op].valid++;
         else if (s === 'LOCKED') opMap[op].locked++;
-        else if (s === 'INVALID') opMap[op].invalid++;
     });
 
-    const rankedOps = Object.values(opMap).sort((a, b) => b.total - a.total);
+    const rankedOps = Object.values(opMap).sort((a, b) => b.valid - a.valid || b.total - a.total);
     const podiumMedals = ['👑', '🥈', '🥉'];
 
-    // 1. Render Top 3 Podium Cards
+    // 1. Top 3 Podium Cards
     const top3 = rankedOps.slice(0, 3);
     podiumRow.innerHTML = top3.map((op, idx) => {
         const initial = (op.name.charAt(0) || 'U').toUpperCase();
@@ -547,7 +654,7 @@ function renderLeaderboard() {
         `;
     }).join('');
 
-    // 2. Render Full Leaderboard Table
+    // 2. Full Table
     leaderboardTbody.innerHTML = rankedOps.map((op, idx) => {
         const initial = (op.name.charAt(0) || 'U').toUpperCase();
         const validRate = op.total > 0 ? Math.round((op.valid / op.total) * 100) : 0;
@@ -577,8 +684,8 @@ function renderLeaderboard() {
     }).join('');
 }
 
-// Update Operator Filter Dropdown
 function renderOperatorDropdown() {
+    const operatorFilter = document.getElementById('operatorFilter');
     const ops = new Set(allAccounts.map(a => a.operator || 'Operator1'));
     const currentVal = operatorFilter.value;
 
@@ -589,7 +696,6 @@ function renderOperatorDropdown() {
     operatorFilter.innerHTML = html;
 }
 
-// Toggle Paid / Unpaid Status of a Batch Box
 function toggleBatchStatus(batchId) {
     const current = batchStatusMap[batchId] === 'PAID' ? 'PAID' : 'UNPAID';
     const next = current === 'PAID' ? 'UNPAID' : 'PAID';
@@ -601,7 +707,7 @@ function toggleBatchStatus(batchId) {
     }
     localStorage.setItem(STORAGE_KEY_BATCH, JSON.stringify(batchStatusMap));
 
-    // Persist to Firebase Realtime Database
+    // Persist to Firebase Realtime DB
     const dbUrl = localStorage.getItem(STORAGE_KEY_DB) || FIREBASE_DB;
     try {
         const endpoint = `${dbUrl.replace(/\/$/, '')}/batch_status/${batchId}.json`;
@@ -612,54 +718,52 @@ function toggleBatchStatus(batchId) {
         }).catch(() => {});
     } catch (e) {}
 
-    showToast(next === 'PAID' ? '🔴 Marked as PAID / USED' : '🟢 Marked as UNPAID / FRESH');
+    showToast(next === 'PAID' ? '🔴 Marked as PAID / CLAIMED' : '🟢 Marked as UNPAID / FRESH', next === 'PAID' ? '🔴' : '🟢');
     render();
 }
 
-// Copy all valid combos from a single batch box
 function copyBatchValid(batchId) {
     const box = getAllBatchBoxes().find(b => b.id === batchId);
     if (!box) return;
 
     const validAccs = box.accounts.filter(a => (a.status || '').toUpperCase() === 'VALID');
     if (validAccs.length === 0) {
-        showToast('No valid accounts in this batch box!');
+        showToast('No valid accounts in this batch box!', '⚠️');
         return;
     }
 
     const text = validAccs.map(a => `${a.email}:${a.password}:${a.token}`).join('\n');
     navigator.clipboard.writeText(text).then(() => {
-        showToast(`Copied ${validAccs.length} valid combo(s) from ${box.operator}'s batch!`);
+        showToast(`Copied ${validAccs.length} valid combo(s) from ${box.operator}'s batch!`, '📋');
     });
 }
 
-// Copy all locked combos from a single batch box
 function copyBatchLocked(batchId) {
     const box = getAllBatchBoxes().find(b => b.id === batchId);
     if (!box) return;
 
     const lockedAccs = box.accounts.filter(a => (a.status || '').toUpperCase() === 'LOCKED');
     if (lockedAccs.length === 0) {
-        showToast('No locked accounts in this batch box!');
+        showToast('No locked accounts in this batch box!', '⚠️');
         return;
     }
 
     const text = lockedAccs.map(a => `${a.email}:${a.password}:${a.token}`).join('\n');
     navigator.clipboard.writeText(text).then(() => {
-        showToast(`Copied ${lockedAccs.length} locked combo(s) from ${box.operator}'s batch!`);
+        showToast(`Copied ${lockedAccs.length} locked combo(s) from ${box.operator}'s batch!`, '🟡');
     });
 }
 
-// 📦 RENDER BATCH BOXES FEED
 function renderBoxes() {
+    const boxesFeed = document.getElementById('boxesFeed');
     const filteredBoxes = getFilteredBoxes();
 
     if (filteredBoxes.length === 0) {
         boxesFeed.innerHTML = `
             <div class="empty-state">
-                <div style="font-size: 36px; margin-bottom: 12px;">📭</div>
-                <p>No batch boxes found matching your timeframe and filters.</p>
-                <small style="color: var(--text-muted);">When accounts are generated, all accounts from each run group into a dedicated Box here.</small>
+                <div style="font-size: 42px; margin-bottom: 12px; filter: drop-shadow(0 0 10px rgba(0, 242, 254, 0.4));">💎</div>
+                <p class="empty-title">No batches found in active filter.</p>
+                <small class="empty-sub">When accounts are generated by any operator, they will instantly appear here as interactive batch boxes in real time.</small>
             </div>
         `;
         return;
@@ -669,11 +773,10 @@ function renderBoxes() {
         const isPaid = batchStatusMap[box.id] === 'PAID';
         const boxClass = isPaid ? 'box-paid' : 'box-unpaid';
         const btnClass = isPaid ? 'btn-paid' : 'btn-unpaid';
-        const btnText = isPaid ? '🔴 PAID / USED' : '🟢 UNPAID / FRESH';
+        const btnText = isPaid ? '🔴 PAID' : '🟢 FRESH';
 
         const validCount = box.accounts.filter(a => (a.status || '').toUpperCase() === 'VALID').length;
         const lockedCount = box.accounts.filter(a => (a.status || '').toUpperCase() === 'LOCKED').length;
-        const invalidCount = box.accounts.filter(a => (a.status || '').toUpperCase() === 'INVALID').length;
 
         const tsFormatted = box.startTime ? new Date(box.startTime).toLocaleString([], {
             month: 'short',
@@ -716,7 +819,6 @@ function renderBoxes() {
                         <div class="batch-status-counts">
                             <span class="text-green">🟢 ${validCount} Valid</span>
                             ${lockedCount > 0 ? `<span class="text-yellow">🟡 ${lockedCount} Locked</span>` : ''}
-                            ${invalidCount > 0 ? `<span class="text-red">🔴 ${invalidCount} Invalid</span>` : ''}
                         </div>
                     </div>
                     <div class="batch-header-right">
@@ -733,13 +835,12 @@ function renderBoxes() {
     }).join('');
 }
 
-// 👤 OPEN OPERATOR PROFILE & STATS MODAL
 function openUserModal(operatorName) {
+    const userModal = document.getElementById('userModal');
     const op = operatorName || 'Operator1';
     document.getElementById('modalUserName').textContent = `Operator: ${op}`;
     document.getElementById('modalUserAvatar').textContent = (op.charAt(0) || 'U').toUpperCase();
 
-    // Compute stats for this user
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 
@@ -782,10 +883,9 @@ function openUserModal(operatorName) {
     document.getElementById('uAllFresh').textContent = uAllFresh;
     document.getElementById('uAllPaid').textContent = uAllPaid;
 
-    // Render batches list for this user
     const opBoxes = allBoxes.filter(b => b.operator === op);
     if (opBoxes.length === 0) {
-        document.getElementById('modalUserBatches').innerHTML = `<div class="empty-mini">No batches recorded for this user.</div>`;
+        document.getElementById('modalUserBatches').innerHTML = `<div class="empty-mini">No batches recorded for this user yet.</div>`;
     } else {
         document.getElementById('modalUserBatches').innerHTML = opBoxes.map((b, i) => {
             const isPaid = batchStatusMap[b.id] === 'PAID';
@@ -811,8 +911,12 @@ function openUserModal(operatorName) {
     userModal.classList.add('active');
 }
 
+// ============================================================================
+// 7. UTILITIES, TOASTS & EXPORTS
+// ============================================================================
+
 function copyText(text, msg = 'Copied to clipboard!') {
-    navigator.clipboard.writeText(text).then(() => showToast(msg));
+    navigator.clipboard.writeText(text).then(() => showToast(msg, '📋'));
 }
 
 function downloadFile(content, fileName, mimeType) {
@@ -825,10 +929,15 @@ function downloadFile(content, fileName, mimeType) {
     URL.revokeObjectURL(url);
 }
 
-function showToast(msg) {
-    toast.textContent = msg;
+function showToast(msg, icon = '⚡') {
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toastMsg');
+    const toastIcon = toast.querySelector('.toast-icon');
+
+    toastMsg.textContent = msg;
+    if (toastIcon) toastIcon.textContent = icon;
     toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 2200);
+    setTimeout(() => toast.classList.remove('show'), 2400);
 }
 
 function escapeHtml(str) {
@@ -837,4 +946,83 @@ function escapeHtml(str) {
 
 function escapeJs(str) {
     return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
+
+// ============================================================================
+// 8. 🌌 ANIMATED CYBER CANVAS PARTICLES
+// ============================================================================
+
+function initCyberCanvas() {
+    const canvas = document.getElementById('bgCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+
+    window.addEventListener('resize', () => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+    });
+
+    const particles = [];
+    const count = Math.min(Math.floor((width * height) / 18000), 75);
+
+    for (let i = 0; i < count; i++) {
+        particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - 0.5) * 0.45,
+            vy: (Math.random() - 0.5) * 0.45,
+            radius: Math.random() * 1.6 + 0.8,
+            color: Math.random() > 0.5 ? '#00f2fe' : '#9d4edd',
+            alpha: Math.random() * 0.6 + 0.2
+        });
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, width, height);
+
+        // Draw connections
+        for (let i = 0; i < particles.length; i++) {
+            for (let j = i + 1; j < particles.length; j++) {
+                const dx = particles[i].x - particles[j].x;
+                const dy = particles[i].y - particles[j].y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < 130) {
+                    ctx.beginPath();
+                    ctx.moveTo(particles[i].x, particles[i].y);
+                    ctx.lineTo(particles[j].x, particles[j].y);
+                    ctx.strokeStyle = `rgba(0, 242, 254, ${(1 - dist / 130) * 0.12})`;
+                    ctx.lineWidth = 0.8;
+                    ctx.stroke();
+                }
+            }
+        }
+
+        // Draw & update particles
+        for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+
+            if (p.x < 0 || p.x > width) p.vx *= -1;
+            if (p.y < 0 || p.y > height) p.vy *= -1;
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = p.alpha;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = p.color;
+            ctx.fill();
+            ctx.globalAlpha = 1;
+            ctx.shadowBlur = 0;
+        }
+
+        requestAnimationFrame(animate);
+    }
+
+    animate();
 }
