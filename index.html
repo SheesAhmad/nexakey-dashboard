@@ -3,24 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NexaKey DataStore • Live Account Vault</title>
+    <title>NexaKey Vault • Cloud Account Store</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="glow-bg glow-1"></div>
-    <div class="glow-bg glow-2"></div>
+    <!-- ============================================================================
+         LOCK SCREEN (Password Protected: nexakey123)
+         ============================================================================ -->
+    <div class="lock-overlay" id="lockOverlay">
+        <div class="lock-card">
+            <div class="lock-logo">🔒</div>
+            <h2 class="lock-title">NEXA<span class="brand-dim">KEY</span> VAULT</h2>
+            <p class="lock-desc">Protected Cloud Storage &bull; Enter passcode to access</p>
+            
+            <form id="lockForm" class="lock-form" onsubmit="return false;">
+                <div class="lock-input-wrap">
+                    <input type="password" id="passInput" placeholder="Enter passcode..." autocomplete="current-password" autofocus>
+                    <button type="button" class="eye-toggle" id="eyeToggle" title="Toggle visibility">👁️</button>
+                </div>
+                <div class="lock-error" id="lockError">Incorrect passcode. Try again.</div>
+                <button type="submit" class="btn-unlock" id="unlockBtn">Unlock Vault ⚡</button>
+            </form>
+            <div class="lock-hint">🔒 Passcode is required to view account combos & tokens.</div>
+        </div>
+    </div>
 
-    <div class="app-container">
+    <!-- ============================================================================
+         MAIN DASHBOARD (Revealed when unlocked)
+         ============================================================================ -->
+    <div class="app-container" id="mainApp" style="display: none;">
         <!-- Top Navigation -->
         <header class="header">
             <div class="logo-area">
                 <div class="logo-icon">⚡</div>
                 <div>
-                    <h1 class="brand-title">NEXA<span class="gradient-text">KEY</span> <span class="badge-tag">DATASTORE</span></h1>
-                    <p class="brand-subtitle">Centralized Cloud Account Vault & Real-Time Sync</p>
+                    <h1 class="brand-title">NEXA<span class="brand-dim">KEY</span> <span class="badge-tag">VAULT</span></h1>
+                    <p class="brand-subtitle">Cloud Account Management • Real-Time Batch Tracker</p>
                 </div>
             </div>
             <div class="header-actions">
@@ -28,7 +49,9 @@
                     <span class="pulse-dot"></span>
                     <span id="liveStatusText">Live Sync Active</span>
                 </div>
-                <button class="btn btn-secondary" id="openConfigBtn">⚙️ Settings / Database</button>
+                <button class="btn btn-secondary" id="refreshBtn">🔄 Refresh</button>
+                <button class="btn btn-secondary" id="openConfigBtn">⚙️ Database</button>
+                <button class="btn btn-secondary" id="lockAppBtn">🔒 Lock</button>
                 <a href="https://nexakey.site" target="_blank" class="btn btn-discord">🌐 nexakey.site</a>
             </div>
         </header>
@@ -36,48 +59,125 @@
         <!-- Stats Overview Cards -->
         <section class="stats-grid">
             <div class="stat-card" data-status="ALL">
-                <div class="stat-icon">📊</div>
+                <div class="stat-icon icon-total">📊</div>
                 <div class="stat-info">
                     <span class="stat-label">Total Generated</span>
                     <span class="stat-value" id="statTotal">0</span>
+                    <span class="stat-subtext" id="statTotalSub">All recorded generations</span>
                 </div>
             </div>
-            <div class="stat-card stat-valid" data-status="VALID">
-                <div class="stat-icon">🟢</div>
+            <div class="stat-card" data-status="VALID">
+                <div class="stat-icon icon-valid">🟢</div>
                 <div class="stat-info">
                     <span class="stat-label">Valid Accounts</span>
                     <span class="stat-value text-green" id="statValid">0</span>
+                    <span class="stat-subtext text-green-sub" id="statValidRate">0% Valid Rate</span>
                 </div>
             </div>
-            <div class="stat-card stat-locked" data-status="LOCKED">
-                <div class="stat-icon">🟡</div>
+            <div class="stat-card" data-status="LOCKED">
+                <div class="stat-icon icon-locked">🟡</div>
                 <div class="stat-info">
                     <span class="stat-label">Locked Accounts</span>
                     <span class="stat-value text-yellow" id="statLocked">0</span>
+                    <span class="stat-subtext" id="statLockedSub">Verify Required</span>
                 </div>
             </div>
-            <div class="stat-card stat-invalid" data-status="INVALID">
-                <div class="stat-icon">🔴</div>
+            <div class="stat-card stat-fresh" data-status="FRESH">
+                <div class="stat-icon icon-fresh">🟢</div>
                 <div class="stat-info">
-                    <span class="stat-label">Invalid Accounts</span>
-                    <span class="stat-value text-red" id="statInvalid">0</span>
+                    <span class="stat-label">Unpaid / Fresh</span>
+                    <span class="stat-value text-green" id="statFresh">0</span>
+                    <span class="stat-subtext text-green-sub">Ready to use / sell</span>
+                </div>
+            </div>
+            <div class="stat-card stat-paid" data-status="PAID">
+                <div class="stat-icon icon-paid">🔴</div>
+                <div class="stat-info">
+                    <span class="stat-label">Paid / Used</span>
+                    <span class="stat-value text-red" id="statPaid">0</span>
+                    <span class="stat-subtext text-red-sub">Already utilized</span>
                 </div>
             </div>
         </section>
 
-        <!-- Controls & Filters Toolbar -->
-        <section class="toolbar">
-            <div class="filter-tabs">
-                <button class="tab-btn active" data-filter="ALL">All Accounts (<span id="countAll">0</span>)</button>
-                <button class="tab-btn" data-filter="VALID">Valid (<span id="countValid">0</span>)</button>
-                <button class="tab-btn" data-filter="LOCKED">Locked (<span id="countLocked">0</span>)</button>
-                <button class="tab-btn" data-filter="INVALID">Invalid (<span id="countInvalid">0</span>)</button>
+        <!-- Leaderboard & Analytics Panel -->
+        <section class="analytics-row">
+            <!-- 👑 Top Genners Leaderboard (Clickable Users) -->
+            <div class="panel leaderboard-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <span class="panel-icon">👑</span>
+                        <h3>Top Genners Leaderboard</h3>
+                        <small style="color: var(--text-muted); font-size: 11px; margin-left: 8px;">(Click any user to view profile)</small>
+                    </div>
+                    <span class="panel-badge" id="leaderboardPeriodBadge">Today</span>
+                </div>
+                <div class="leaderboard-list" id="leaderboardList">
+                    <div class="empty-mini">Loading operators...</div>
+                </div>
             </div>
 
-            <div class="search-and-actions">
+            <!-- Quick Stats & Legend Panel -->
+            <div class="panel info-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <span class="panel-icon">📦</span>
+                        <h3>Batch System & Status Guide</h3>
+                    </div>
+                    <span class="panel-badge" id="batchesTotalBadge">0 Batches</span>
+                </div>
+                <div class="info-content">
+                    <div class="guide-item">
+                        <span class="guide-box green-box-demo"></span>
+                        <div>
+                            <strong>🟢 GREEN BOX (Unpaid / Fresh)</strong>
+                            <p>Accounts generated and ready for use. Copy combos anytime with 1 click.</p>
+                        </div>
+                    </div>
+                    <div class="guide-item">
+                        <span class="guide-box red-box-demo"></span>
+                        <div>
+                            <strong>🔴 RED BOX (Paid / Used)</strong>
+                            <p>Accounts that have been sold, paid for, or claimed. Click toggle on any box to update.</p>
+                        </div>
+                    </div>
+                    <div class="provider-tags-list" id="providerTagsList">
+                        <!-- Provider tags rendered by JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Controls, Filters & Search Toolbar -->
+        <section class="toolbar">
+            <div class="toolbar-left">
+                <!-- Timeframe selector -->
+                <div class="filter-group">
+                    <span class="filter-label">📅 Period:</span>
+                    <div class="timeframe-buttons" id="timeframeGroup">
+                        <button class="timeframe-btn active" data-range="today">Today</button>
+                        <button class="timeframe-btn" data-range="yesterday">Yesterday</button>
+                        <button class="timeframe-btn" data-range="7d">Last 7 Days</button>
+                        <button class="timeframe-btn" data-range="30d">Last 30 Days</button>
+                        <button class="timeframe-btn" data-range="all">All Time</button>
+                    </div>
+                </div>
+
+                <!-- Status Filter -->
+                <div class="filter-group">
+                    <span class="filter-label">🏷️ Status:</span>
+                    <div class="filter-tabs" id="statusFilterGroup">
+                        <button class="tab-btn active" data-filter="ALL">All Batches (<span id="countAll">0</span>)</button>
+                        <button class="tab-btn" data-filter="FRESH">🟢 Fresh Only (<span id="countFresh">0</span>)</button>
+                        <button class="tab-btn" data-filter="PAID">🔴 Paid Only (<span id="countPaidBatches">0</span>)</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="toolbar-right">
                 <div class="search-box">
                     <span class="search-icon">🔍</span>
-                    <input type="text" id="searchInput" placeholder="Search by operator, email, token, or date...">
+                    <input type="text" id="searchInput" placeholder="Search operator, email, token, batch ID...">
                 </div>
 
                 <select id="operatorFilter" class="dropdown-filter">
@@ -86,44 +186,116 @@
 
                 <button class="btn btn-primary" id="copyAllValidBtn">📋 Copy All Valid</button>
                 <button class="btn btn-secondary" id="exportBtn">💾 Export TXT</button>
+                <button class="btn btn-secondary" id="exportCsvBtn">📊 Export CSV</button>
             </div>
         </section>
 
-        <!-- Accounts Feed -->
+        <!-- Batch Boxes Feed Container -->
         <main class="accounts-section">
-            <div class="accounts-list" id="accountsList">
+            <div class="boxes-feed" id="boxesFeed">
                 <div class="empty-state" id="loadingState">
                     <div class="spinner"></div>
-                    <p>Loading accounts from cloud store...</p>
+                    <p>Syncing accounts from cloud database...</p>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- Settings / Database Config Modal -->
+    <!-- ============================================================================
+         OPERATOR PROFILE & STATS MODAL (Opens on User Click)
+         ============================================================================ -->
+    <div class="modal-overlay" id="userModal">
+        <div class="modal-card user-modal-card">
+            <div class="modal-header">
+                <div class="user-modal-title">
+                    <div class="user-avatar-large" id="modalUserAvatar">U</div>
+                    <div>
+                        <h2 id="modalUserName">Operator Profile</h2>
+                        <span class="user-rank-badge" id="modalUserRank">👑 Rank #1</span>
+                    </div>
+                </div>
+                <button class="close-btn" id="closeUserModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- User Today Stats -->
+                <div class="user-stats-section">
+                    <h3 class="section-title">📅 Today's Performance</h3>
+                    <div class="user-stats-grid">
+                        <div class="mini-stat">
+                            <span class="mini-stat-label">Total Today</span>
+                            <span class="mini-stat-val" id="uTodayTotal">0</span>
+                        </div>
+                        <div class="mini-stat">
+                            <span class="mini-stat-label">Valid Today</span>
+                            <span class="mini-stat-val text-green" id="uTodayValid">0</span>
+                        </div>
+                        <div class="mini-stat">
+                            <span class="mini-stat-label">Locked Today</span>
+                            <span class="mini-stat-val text-yellow" id="uTodayLocked">0</span>
+                        </div>
+                        <div class="mini-stat">
+                            <span class="mini-stat-label">Success Rate</span>
+                            <span class="mini-stat-val text-green" id="uTodayRate">0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User All-Time Stats -->
+                <div class="user-stats-section">
+                    <h3 class="section-title">🌐 All-Time Summary</h3>
+                    <div class="user-stats-grid">
+                        <div class="mini-stat">
+                            <span class="mini-stat-label">All-Time Total</span>
+                            <span class="mini-stat-val" id="uAllTotal">0</span>
+                        </div>
+                        <div class="mini-stat">
+                            <span class="mini-stat-label">All-Time Valid</span>
+                            <span class="mini-stat-val text-green" id="uAllValid">0</span>
+                        </div>
+                        <div class="mini-stat">
+                            <span class="mini-stat-label">Unpaid / Fresh</span>
+                            <span class="mini-stat-val text-green" id="uAllFresh">0</span>
+                        </div>
+                        <div class="mini-stat">
+                            <span class="mini-stat-label">Paid / Used</span>
+                            <span class="mini-stat-val text-red" id="uAllPaid">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Batches List -->
+                <div class="user-stats-section">
+                    <h3 class="section-title">📦 Batches by this Operator</h3>
+                    <div class="user-batches-list" id="modalUserBatches">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================================
+         SETTINGS / DATABASE CONFIG MODAL
+         ============================================================================ -->
     <div class="modal-overlay" id="configModal">
         <div class="modal-card">
             <div class="modal-header">
-                <h2>⚙️ Cloud Database Configuration</h2>
+                <h2>⚙️ Cloud Database Settings</h2>
                 <button class="close-btn" id="closeConfigBtn">&times;</button>
             </div>
             <div class="modal-body">
                 <p class="modal-desc">
-                    Connect your free <strong>Firebase Realtime Database</strong> or custom REST endpoint. 
-                    Accounts generated by friends will automatically appear live on this page!
+                    Your dashboard is connected to your Firebase Realtime Database. 
+                    All accounts generated by any operator running the generator sync here automatically.
                 </p>
                 <div class="form-group">
-                    <label for="dbUrlInput">Firebase Realtime DB URL / REST Endpoint:</label>
-                    <input type="text" id="dbUrlInput" placeholder="https://YOUR-PROJECT-NAME-default-rtdb.firebaseio.com">
-                    <small>Example: <code>https://nexakey-vault-default-rtdb.firebaseio.com</code></small>
-                </div>
-                <div class="form-group">
-                    <label for="dbPasscode">Dashboard Access Passcode (Optional):</label>
-                    <input type="password" id="dbPasscode" placeholder="Leave empty for public access">
+                    <label for="dbUrlInput">Firebase Realtime DB URL:</label>
+                    <input type="text" id="dbUrlInput" value="https://nexakey-gen-default-rtdb.firebaseio.com">
+                    <small>Default Endpoint: <code>https://nexakey-gen-default-rtdb.firebaseio.com</code></small>
                 </div>
                 <div class="modal-actions">
-                    <button class="btn btn-secondary" id="loadSampleDataBtn">🧪 Load Demo Sample Data</button>
-                    <button class="btn btn-primary" id="saveConfigBtn">💾 Save & Connect</button>
+                    <button class="btn btn-secondary" id="clearCacheBtn">🗑️ Clear Local Cache</button>
+                    <button class="btn btn-primary" id="saveConfigBtn">💾 Save & Reconnect</button>
                 </div>
             </div>
         </div>
