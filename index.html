@@ -66,7 +66,7 @@
                     <span class="stat-subtext" id="statTotalSub">All recorded generations</span>
                 </div>
             </div>
-            <div class="stat-card" data-status="VALID">
+            <div class="stat-card stat-valid" data-status="VALID">
                 <div class="stat-icon icon-valid">🟢</div>
                 <div class="stat-info">
                     <span class="stat-label">Valid Accounts</span>
@@ -74,7 +74,7 @@
                     <span class="stat-subtext text-green-sub" id="statValidRate">0% Valid Rate</span>
                 </div>
             </div>
-            <div class="stat-card" data-status="LOCKED">
+            <div class="stat-card stat-locked" data-status="LOCKED">
                 <div class="stat-icon icon-locked">🟡</div>
                 <div class="stat-info">
                     <span class="stat-label">Locked Accounts</span>
@@ -100,29 +100,54 @@
             </div>
         </section>
 
-        <!-- Leaderboard & Analytics Panel -->
+        <!-- Advanced Leaderboard & Info Row -->
         <section class="analytics-row">
-            <!-- 👑 Top Genners Leaderboard (Clickable Users) -->
+            <!-- 👑 Advanced Leaderboard Section -->
             <div class="panel leaderboard-panel">
                 <div class="panel-header">
                     <div class="panel-title">
                         <span class="panel-icon">👑</span>
                         <h3>Top Genners Leaderboard</h3>
-                        <small style="color: var(--text-muted); font-size: 11px; margin-left: 8px;">(Click any user to view profile)</small>
+                        <small class="muted-note">(Click user to inspect stats)</small>
                     </div>
-                    <span class="panel-badge" id="leaderboardPeriodBadge">Today</span>
+                    <div class="lb-time-pills">
+                        <button class="lb-pill active" data-lb-range="today">Today</button>
+                        <button class="lb-pill" data-lb-range="7d">7 Days</button>
+                        <button class="lb-pill" data-lb-range="all">All-Time</button>
+                    </div>
                 </div>
-                <div class="leaderboard-list" id="leaderboardList">
-                    <div class="empty-mini">Loading operators...</div>
+
+                <!-- Top 3 Podium Highlights -->
+                <div class="podium-row" id="podiumRow">
+                    <!-- Populated by JS -->
+                </div>
+
+                <!-- Complete Leaderboard Table -->
+                <div class="leaderboard-table-wrap">
+                    <table class="leaderboard-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">Rank</th>
+                                <th>Operator</th>
+                                <th>Total Gened</th>
+                                <th>Valid Rate</th>
+                                <th>Locked</th>
+                                <th>Status Ratio</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboardTbody">
+                            <tr><td colspan="6" class="empty-mini">Loading operator rankings...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
-            <!-- Quick Stats & Legend Panel -->
+            <!-- Batch Guide & Quick Legend -->
             <div class="panel info-panel">
                 <div class="panel-header">
                     <div class="panel-title">
                         <span class="panel-icon">📦</span>
-                        <h3>Batch System & Status Guide</h3>
+                        <h3>Batch System Guide</h3>
                     </div>
                     <span class="panel-badge" id="batchesTotalBadge">0 Batches</span>
                 </div>
@@ -131,14 +156,14 @@
                         <span class="guide-box green-box-demo"></span>
                         <div>
                             <strong>🟢 GREEN BOX (Unpaid / Fresh)</strong>
-                            <p>Accounts generated and ready for use. Copy combos anytime with 1 click.</p>
+                            <p>Active accounts ready to use or sell. Use <strong>Copy Valid</strong> or <strong>Copy Locked</strong> anytime.</p>
                         </div>
                     </div>
                     <div class="guide-item">
                         <span class="guide-box red-box-demo"></span>
                         <div>
                             <strong>🔴 RED BOX (Paid / Used)</strong>
-                            <p>Accounts that have been sold, paid for, or claimed. Click toggle on any box to update.</p>
+                            <p>Accounts that have been claimed or sold. Click the toggle button on any box to update status.</p>
                         </div>
                     </div>
                     <div class="provider-tags-list" id="providerTagsList">
@@ -148,7 +173,7 @@
             </div>
         </section>
 
-        <!-- Controls, Filters & Search Toolbar -->
+        <!-- Controls, Filters & Bulk Copy Toolbar -->
         <section class="toolbar">
             <div class="toolbar-left">
                 <!-- Timeframe selector -->
@@ -184,7 +209,9 @@
                     <option value="ALL">👤 All Operators</option>
                 </select>
 
+                <!-- Dedicated Copy All Buttons -->
                 <button class="btn btn-primary" id="copyAllValidBtn">📋 Copy All Valid</button>
+                <button class="btn btn-warning" id="copyAllLockedBtn">🟡 Copy All Locked</button>
                 <button class="btn btn-secondary" id="exportBtn">💾 Export TXT</button>
                 <button class="btn btn-secondary" id="exportCsvBtn">📊 Export CSV</button>
             </div>

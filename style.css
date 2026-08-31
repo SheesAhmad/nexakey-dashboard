@@ -20,6 +20,7 @@
     
     --color-yellow: #f59e0b;
     --color-yellow-bg: rgba(245, 158, 11, 0.12);
+    --color-yellow-border: rgba(245, 158, 11, 0.35);
     
     --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
@@ -312,6 +313,18 @@ body {
     transform: translateY(-1px);
 }
 
+.btn-warning {
+    background: var(--color-yellow-bg);
+    border: 1px solid var(--color-yellow-border);
+    color: var(--color-yellow);
+    font-weight: 700;
+}
+
+.btn-warning:hover {
+    background: rgba(245, 158, 11, 0.25);
+    color: #fde68a;
+}
+
 .btn-secondary {
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -410,12 +423,12 @@ body {
 /* Analytics Row (Leaderboard + Guide) */
 .analytics-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1.4fr 1fr;
     gap: 16px;
     margin-bottom: 24px;
 }
 
-@media (max-width: 850px) {
+@media (max-width: 950px) {
     .analytics-row { grid-template-columns: 1fr; }
 }
 
@@ -433,6 +446,8 @@ body {
     margin-bottom: 14px;
     padding-bottom: 10px;
     border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .panel-title {
@@ -446,88 +461,203 @@ body {
     font-weight: 700;
 }
 
-.panel-badge {
-    font-size: 11px;
+.muted-note {
     color: var(--text-muted);
-    background: rgba(255, 255, 255, 0.04);
-    padding: 3px 9px;
+    font-size: 11px;
+    margin-left: 6px;
+}
+
+.lb-time-pills {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-dark);
+    padding: 2px;
     border-radius: 6px;
+    border: 1px solid var(--border);
+}
+
+.lb-pill {
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-size: 11px;
     font-weight: 600;
+    font-family: inherit;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
 }
 
-/* Leaderboard List */
-.leaderboard-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    max-height: 200px;
-    overflow-y: auto;
+.lb-pill.active {
+    background: #ffffff;
+    color: #000000;
+    font-weight: 700;
 }
 
-.leaderboard-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 12px;
-    border-radius: 8px;
+/* ============================================================================
+   ADVANCED LEADERBOARD (Podium + Table)
+   ============================================================================ */
+
+.podium-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.podium-card {
     background: var(--bg-dark);
     border: 1px solid var(--border);
-    transition: all 0.15s ease;
-    cursor: pointer;
-}
-
-.leaderboard-item:hover {
-    background: var(--bg-surface);
-    border-color: var(--border-hover);
-    transform: translateX(2px);
-}
-
-.leader-left {
+    border-radius: 10px;
+    padding: 12px;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 10px;
-}
-
-.leader-rank {
-    font-size: 14px;
-    width: 24px;
     text-align: center;
-    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
 }
 
-.leader-avatar {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
+.podium-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-hover);
+}
+
+.podium-card.rank-1 {
+    border-color: rgba(251, 191, 36, 0.4);
+    background: linear-gradient(180deg, rgba(251, 191, 36, 0.08) 0%, #000000 100%);
+}
+
+.podium-card.rank-2 {
+    border-color: rgba(228, 228, 231, 0.4);
+    background: linear-gradient(180deg, rgba(228, 228, 231, 0.06) 0%, #000000 100%);
+}
+
+.podium-card.rank-3 {
+    border-color: rgba(217, 119, 6, 0.4);
+    background: linear-gradient(180deg, rgba(217, 119, 6, 0.06) 0%, #000000 100%);
+}
+
+.podium-crown {
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.podium-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
     background: #ffffff;
     color: #000000;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 800;
-    font-size: 12px;
+    font-size: 14px;
+    margin-bottom: 6px;
 }
 
-.leader-name {
-    font-size: 13px;
+.podium-name {
+    font-size: 12px;
     font-weight: 700;
+    color: var(--text-primary);
+    max-width: 100px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.leader-stats {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 12px;
-}
-
-.leader-valid {
+.podium-val {
+    font-size: 11px;
     color: var(--color-green);
     font-weight: 700;
+    margin-top: 2px;
 }
 
-.leader-count {
-    color: var(--text-secondary);
-    font-weight: 600;
+/* Leaderboard Table */
+.leaderboard-table-wrap {
+    overflow-x: auto;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    text-align: left;
+}
+
+.leaderboard-table th {
+    color: var(--text-muted);
+    font-size: 10px;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.leaderboard-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    vertical-align: middle;
+}
+
+.leader-row-tr {
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.leader-row-tr:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.tb-rank {
+    font-weight: 800;
+    font-size: 12px;
+}
+
+.tb-op-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+}
+
+.tb-av {
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    background: #ffffff;
+    color: #000000;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.ratio-bar-wrap {
+    width: 80px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+}
+
+.ratio-valid {
+    background: var(--color-green);
+    height: 100%;
+}
+
+.ratio-locked {
+    background: var(--color-yellow);
+    height: 100%;
 }
 
 /* Guide & Info Box */
@@ -798,6 +928,7 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
 }
 
 /* Paid/Unpaid Status Toggle Button */
@@ -847,6 +978,23 @@ body {
 .btn-copy-box:hover {
     background: #e4e4e7;
     transform: translateY(-1px);
+}
+
+.btn-copy-locked {
+    background: var(--color-yellow-bg);
+    color: var(--color-yellow);
+    border: 1px solid var(--color-yellow-border);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-copy-locked:hover {
+    background: rgba(245, 158, 11, 0.25);
+    color: #fde68a;
 }
 
 /* Accounts Inside Box */

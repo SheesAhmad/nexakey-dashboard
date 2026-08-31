@@ -9,6 +9,7 @@ const STORAGE_KEY_CACHE = 'nexakey_local_cache';
 let allAccounts = [];
 let batchStatusMap = {}; // { [batchId]: 'PAID' | 'UNPAID' }
 let activeTimeframe = 'today';
+let leaderboardRange = 'today';
 let activeFilter = 'ALL'; // ALL | FRESH | PAID
 let currentOperator = 'ALL';
 let searchQuery = '';
@@ -28,8 +29,8 @@ const lockAppBtn = document.getElementById('lockAppBtn');
 const boxesFeed = document.getElementById('boxesFeed');
 const searchInput = document.getElementById('searchInput');
 const operatorFilter = document.getElementById('operatorFilter');
-const leaderboardList = document.getElementById('leaderboardList');
-const leaderboardPeriodBadge = document.getElementById('leaderboardPeriodBadge');
+const podiumRow = document.getElementById('podiumRow');
+const leaderboardTbody = document.getElementById('leaderboardTbody');
 const providerTagsList = document.getElementById('providerTagsList');
 
 // Modal Elements
@@ -45,6 +46,7 @@ const dbUrlInput = document.getElementById('dbUrlInput');
 // Action Buttons
 const refreshBtn = document.getElementById('refreshBtn');
 const copyAllValidBtn = document.getElementById('copyAllValidBtn');
+const copyAllLockedBtn = document.getElementById('copyAllLockedBtn');
 const exportBtn = document.getElementById('exportBtn');
 const exportCsvBtn = document.getElementById('exportCsvBtn');
 const toast = document.getElementById('toast');
@@ -157,16 +159,17 @@ function setupDashboardListeners() {
             document.querySelectorAll('#timeframeGroup .timeframe-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             activeTimeframe = btn.dataset.range;
-            
-            const labels = {
-                'today': 'Today',
-                'yesterday': 'Yesterday',
-                '7d': 'Last 7 Days',
-                '30d': 'Last 30 Days',
-                'all': 'All Time'
-            };
-            leaderboardPeriodBadge.textContent = labels[activeTimeframe] || 'Selected Period';
             render();
+        };
+    });
+
+    // Leaderboard timeframe pills
+    document.querySelectorAll('.lb-pill').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.lb-pill').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            leaderboardRange = btn.dataset.lbRange;
+            renderLeaderboard();
         };
     });
 
@@ -216,6 +219,27 @@ function setupDashboardListeners() {
         const text = validAccs.map(a => `${a.email}:${a.password}:${a.token}`).join('\n');
         navigator.clipboard.writeText(text).then(() => {
             showToast(`Copied ${validAccs.length} valid combo(s)!`);
+        });
+    };
+
+    // Copy all locked in active view
+    copyAllLockedBtn.onclick = () => {
+        const boxes = getFilteredBoxes();
+        const lockedAccs = [];
+        boxes.forEach(b => {
+            b.accounts.forEach(a => {
+                if ((a.status || '').toUpperCase() === 'LOCKED') lockedAccs.push(a);
+            });
+        });
+
+        if (lockedAccs.length === 0) {
+            showToast('No locked accounts in current view!');
+            return;
+        }
+
+        const text = lockedAccs.map(a => `${a.email}:${a.password}:${a.token}`).join('\n');
+        navigator.clipboard.writeText(text).then(() => {
+            showToast(`Copied ${lockedAccs.length} locked combo(s)!`);
         });
     };
 
@@ -345,7 +369,6 @@ async function fetchAccounts() {
 // Helper: Get or calculate batch ID for an account
 function getBatchId(acc) {
     if (acc.session_id) return acc.session_id;
-    // Fallback: group accounts from same operator within 5-minute window
     const ts = new Date(acc.timestamp || 0).getTime();
     const cluster = Math.floor(ts / (5 * 60 * 1000));
     const op = (acc.operator || 'User').replace(/[^a-zA-Z0-9_]/g, '');
@@ -353,7 +376,8 @@ function getBatchId(acc) {
 }
 
 // Filter accounts by active timeframe
-function getTimeframeAccounts() {
+function getTimeframeAccounts(customRange) {
+    const r = customRange || activeTimeframe;
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     const startOfYesterday = startOfToday - (24 * 60 * 60 * 1000);
@@ -361,16 +385,16 @@ function getTimeframeAccounts() {
     const thirtyDaysAgo = now.getTime() - (30 * 24 * 60 * 60 * 1000);
 
     return allAccounts.filter(acc => {
-        if (!acc.timestamp) return activeTimeframe === 'all';
+        if (!acc.timestamp) return r === 'all';
         const accTime = new Date(acc.timestamp).getTime();
 
-        if (activeTimeframe === 'today') {
+        if (r === 'today') {
             return accTime >= startOfToday;
-        } else if (activeTimeframe === 'yesterday') {
+        } else if (r === 'yesterday') {
             return accTime >= startOfYesterday && accTime < startOfToday;
-        } else if (activeTimeframe === '7d') {
+        } else if (r === '7d') {
             return accTime >= sevenDaysAgo;
-        } else if (activeTimeframe === '30d') {
+        } else if (r === '30d') {
             return accTime >= thirtyDaysAgo;
         }
         return true; // 'all'
@@ -480,11 +504,12 @@ function renderStats() {
     document.getElementById('batchesTotalBadge').textContent = `${boxes.length} Batches in Period`;
 }
 
-// 👑 Render Leaderboard (Clickable Users)
+// 👑 Render Advanced Leaderboard (Podium + Table)
 function renderLeaderboard() {
-    const tfAccounts = getTimeframeAccounts();
+    const tfAccounts = getTimeframeAccounts(leaderboardRange);
     if (tfAccounts.length === 0) {
-        leaderboardList.innerHTML = `<div class="empty-mini">No operator activity in this timeframe</div>`;
+        podiumRow.innerHTML = '';
+        leaderboardTbody.innerHTML = `<tr><td colspan="6" class="empty-mini">No operator activity recorded in this period.</td></tr>`;
         return;
     }
 
@@ -502,25 +527,49 @@ function renderLeaderboard() {
     });
 
     const rankedOps = Object.values(opMap).sort((a, b) => b.total - a.total);
-    const medals = ['🥇', '🥈', '🥉'];
+    const podiumMedals = ['👑', '🥈', '🥉'];
 
-    leaderboardList.innerHTML = rankedOps.map((op, idx) => {
-        const rankDisplay = idx < 3 ? medals[idx] : `#${idx + 1}`;
-        const validRate = op.total > 0 ? Math.round((op.valid / op.total) * 100) : 0;
+    // 1. Render Top 3 Podium Cards
+    const top3 = rankedOps.slice(0, 3);
+    podiumRow.innerHTML = top3.map((op, idx) => {
         const initial = (op.name.charAt(0) || 'U').toUpperCase();
+        const validRate = op.total > 0 ? Math.round((op.valid / op.total) * 100) : 0;
+        return `
+            <div class="podium-card rank-${idx + 1}" onclick="openUserModal('${escapeJs(op.name)}')">
+                <div class="podium-crown">${podiumMedals[idx]} #${idx + 1}</div>
+                <div class="podium-avatar">${initial}</div>
+                <div class="podium-name">${escapeHtml(op.name)}</div>
+                <div class="podium-val">🟢 ${op.valid} Valid (${validRate}%)</div>
+            </div>
+        `;
+    }).join('');
+
+    // 2. Render Full Leaderboard Table
+    leaderboardTbody.innerHTML = rankedOps.map((op, idx) => {
+        const initial = (op.name.charAt(0) || 'U').toUpperCase();
+        const validRate = op.total > 0 ? Math.round((op.valid / op.total) * 100) : 0;
+        const lockedRate = op.total > 0 ? Math.round((op.locked / op.total) * 100) : 0;
+        const rankDisplay = idx === 0 ? '👑 #1' : idx === 1 ? '🥈 #2' : idx === 2 ? '🥉 #3' : `#${idx + 1}`;
 
         return `
-            <div class="leaderboard-item" onclick="openUserModal('${escapeJs(op.name)}')">
-                <div class="leader-left">
-                    <span class="leader-rank">${rankDisplay}</span>
-                    <div class="leader-avatar">${initial}</div>
-                    <span class="leader-name">👤 ${escapeHtml(op.name)}</span>
-                </div>
-                <div class="leader-stats">
-                    <span class="leader-valid">✓ ${validRate}%</span>
-                    <span class="leader-count">${op.total} gened</span>
-                </div>
-            </div>
+            <tr class="leader-row-tr" onclick="openUserModal('${escapeJs(op.name)}')">
+                <td class="tb-rank">${rankDisplay}</td>
+                <td>
+                    <div class="tb-op-cell">
+                        <span class="tb-av">${initial}</span>
+                        <span>${escapeHtml(op.name)}</span>
+                    </div>
+                </td>
+                <td><strong>${op.total}</strong> accounts</td>
+                <td><span class="text-green">🟢 ${op.valid} (${validRate}%)</span></td>
+                <td><span class="text-yellow">🟡 ${op.locked}</span></td>
+                <td>
+                    <div class="ratio-bar-wrap" title="${validRate}% Valid, ${lockedRate}% Locked">
+                        <div class="ratio-valid" style="width: ${validRate}%;"></div>
+                        <div class="ratio-locked" style="width: ${lockedRate}%;"></div>
+                    </div>
+                </td>
+            </tr>
         `;
     }).join('');
 }
@@ -565,7 +614,7 @@ function toggleBatchStatus(batchId) {
 }
 
 // Copy all valid combos from a single batch box
-function copyBatchCombos(batchId) {
+function copyBatchValid(batchId) {
     const box = getAllBatchBoxes().find(b => b.id === batchId);
     if (!box) return;
 
@@ -577,7 +626,24 @@ function copyBatchCombos(batchId) {
 
     const text = validAccs.map(a => `${a.email}:${a.password}:${a.token}`).join('\n');
     navigator.clipboard.writeText(text).then(() => {
-        showToast(`Copied ${validAccs.length} combo(s) from ${box.operator}'s batch!`);
+        showToast(`Copied ${validAccs.length} valid combo(s) from ${box.operator}'s batch!`);
+    });
+}
+
+// Copy all locked combos from a single batch box
+function copyBatchLocked(batchId) {
+    const box = getAllBatchBoxes().find(b => b.id === batchId);
+    if (!box) return;
+
+    const lockedAccs = box.accounts.filter(a => (a.status || '').toUpperCase() === 'LOCKED');
+    if (lockedAccs.length === 0) {
+        showToast('No locked accounts in this batch box!');
+        return;
+    }
+
+    const text = lockedAccs.map(a => `${a.email}:${a.password}:${a.token}`).join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+        showToast(`Copied ${lockedAccs.length} locked combo(s) from ${box.operator}'s batch!`);
     });
 }
 
@@ -652,7 +718,8 @@ function renderBoxes() {
                     </div>
                     <div class="batch-header-right">
                         <button class="status-btn ${btnClass}" onclick="toggleBatchStatus('${escapeJs(box.id)}')">${btnText}</button>
-                        <button class="btn-copy-box" onclick="copyBatchCombos('${escapeJs(box.id)}')">📋 Copy All Combos (${validCount})</button>
+                        <button class="btn-copy-box" onclick="copyBatchValid('${escapeJs(box.id)}')">📋 Copy Valid (${validCount})</button>
+                        ${lockedCount > 0 ? `<button class="btn-copy-locked" onclick="copyBatchLocked('${escapeJs(box.id)}')">🟡 Copy Locked (${lockedCount})</button>` : ''}
                     </div>
                 </div>
                 <div class="batch-accounts">
@@ -731,7 +798,7 @@ function openUserModal(operatorName) {
                         <button class="sm-copy-btn" onclick="toggleBatchStatus('${escapeJs(b.id)}'); openUserModal('${escapeJs(op)}');">
                             ${isPaid ? '🔴 PAID' : '🟢 FRESH'}
                         </button>
-                        <button class="sm-copy-btn" onclick="copyBatchCombos('${escapeJs(b.id)}')">📋 Copy</button>
+                        <button class="sm-copy-btn" onclick="copyBatchValid('${escapeJs(b.id)}')">📋 Copy</button>
                     </div>
                 </div>
             `;
