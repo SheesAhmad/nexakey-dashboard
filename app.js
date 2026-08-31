@@ -385,11 +385,14 @@ function getTimeframeAccounts(customRange) {
     const thirtyDaysAgo = now.getTime() - (30 * 24 * 60 * 60 * 1000);
 
     return allAccounts.filter(acc => {
-        if (!acc.timestamp) return r === 'all';
+        if (!acc.timestamp) return true;
         const accTime = new Date(acc.timestamp).getTime();
+        if (isNaN(accTime)) return true;
 
         if (r === 'today') {
-            return accTime >= startOfToday;
+            const accDate = new Date(acc.timestamp).toLocaleDateString();
+            const todayDate = now.toLocaleDateString();
+            return accDate === todayDate || accTime >= startOfToday || (now.getTime() - accTime <= 24 * 60 * 60 * 1000);
         } else if (r === 'yesterday') {
             return accTime >= startOfYesterday && accTime < startOfToday;
         } else if (r === '7d') {
